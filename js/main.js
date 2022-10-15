@@ -63,7 +63,6 @@ fetch(API_URL_Students)
       products = data;
       console.log(products);
       renderProducts(products);
-      counter();
     }
   })
   .catch((err) => {
@@ -76,7 +75,6 @@ fetch(API_URL_Students)
   .finally(() => {
     spinner.remove();
     resultStatus.textContent = "Products list";
-    counter();
   });
 
 const showError = (appendTo, errMsg) => {
@@ -91,23 +89,22 @@ elResultList.addEventListener("click", (evt) => {
 
   if (target.matches(".deleteBtn")) {
     const deletingId = +target.dataset.id;
-    // fetch(`${API_URL_Students}/${deletingId}`, {
-    //   method: "DELETE",
-    // })
-    //   .then((res) => {
-    //     if (res.status === 200) {
-    //       return res.json();
-    //     }
-    //     return Promise.reject(res);
-    //   })
-    //   .then(() => {
-    //     const deletingIndex = products.findIndex(
-    //       (phone) => phone.id === deletingId
-    //     );
-    //     products.splice(deletingIndex, 1);
-    //     renderProducts();
-    //     counter();
-    //   });
+    fetch(`${API_URL_Students}/${deletingId}`, {
+      method: "DELETE",
+    })
+      .then((res) => {
+        if (res.status === 200) {
+          return res.json();
+        }
+        return Promise.reject(res);
+      })
+      .then(() => {
+        const deletingIndex = products.findIndex(
+          (phone) => phone.id === deletingId
+        );
+        products.splice(deletingIndex, 1);
+        renderProducts();
+      });
   }
   if (target.matches(".editBtn")) {
     const editingId = +target.dataset.id;
@@ -171,15 +168,29 @@ elForm.addEventListener("submit", (evt) => {
         });
     } else {
       const editingIdNum = +editingId;
-      const editingIndex = products.findIndex(
-        (phone) => phone.id === editingIdNum
-      );
+      fetch(`${API_URL_Students}/${editingId}`, {
+        method: "PUT",
+        body: JSON.stringify(newPhone),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((res) => {
+          if (res.status === 200) {
+            return res.json();
+          }
+          return Promise.reject(res);
+        })
+        .then(() => {
+          const editingIndex = products.findIndex(
+            (phone) => phone.id === editingIdNum
+          );
 
-      products.splice(editingIndex, 1, newPhone);
+          products.splice(editingIndex, 1, newPhone);
+          renderProducts();
+        });
     }
   }
-  renderProducts();
-  counter();
 });
 
 elFilterForm.addEventListener("submit", (evt) => {
@@ -228,7 +239,6 @@ elFilterForm.addEventListener("submit", (evt) => {
   });
 
   renderProducts(filteredProducts);
-  counter(filteredProducts);
 });
 
 //
