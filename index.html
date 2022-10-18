@@ -19,7 +19,7 @@
         <button
           class="btn btn-primary px-4 addBtn"
           data-bs-toggle="modal"
-          data-bs-target="#student-modal"
+          data-bs-target="#product-modal"
         >
           <span class="me-2">Add product</span>
           <i style="pointer-events: none" class="fa-solid fa-plus"></i>
@@ -85,13 +85,15 @@
             <div class="mb-3">
               <label for="sortby" class="form-label">Sort by</label>
               <select class="form-select" id="sortby">
-                <option value="1">Name</option>
-                <option value="2">Price: to lowest</option>
-                <option value="3">Price: to highest</option>
+                <option value="title">Name</option>
+                <option value="price&_order=desc">Price: to lowest</option>
+                <option value="price&_order=asc">Price: to highest</option>
               </select>
             </div>
 
-            <button class="btn btn-primary d-block w-100 py-2">Filter</button>
+            <button id="filterBtn" class="btn btn-primary d-block w-100 py-2">
+              Filter
+            </button>
           </form>
         </div>
 
@@ -112,7 +114,7 @@
 
     <div
       class="modal fade"
-      id="student-modal"
+      id="product-modal"
       tabindex="-1"
       aria-labelledby="editStudentModalLabel"
       aria-hidden="true"
@@ -246,7 +248,7 @@
               <button
                 class="btn rounded-0 btn-secondary editBtn"
                 data-bs-toggle="modal"
-                data-bs-target="#student-modal"
+                data-bs-target="#product-modal"
               >
                 <i class="fa-solid fa-pen" style="pointer-events: none"></i>
               </button>

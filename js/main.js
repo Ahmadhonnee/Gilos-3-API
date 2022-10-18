@@ -17,7 +17,9 @@ const resultStatus = document.querySelector(".productsList");
 const elWrapper = document.querySelector(".wrapper");
 const elCardsList = document.querySelector(".cardsList");
 
-const API_URL_Students = "http://167.235.158.238/products";
+const elModal = new bootstrap.Modal(document.querySelector("#product-modal"));
+
+const API_URL_Products = "http://167.235.158.238/products";
 const API_URL_Manufacturers = "http://167.235.158.238/manufacturers";
 
 let products = [];
@@ -50,7 +52,7 @@ elWrapper.prepend(spinner);
 
 resultStatus.textContent = "Loading...";
 
-fetch(API_URL_Students)
+fetch(API_URL_Products)
   .then((res) => {
     if (res.status === 200) {
       console.log(res.status);
@@ -88,8 +90,9 @@ elResultList.addEventListener("click", (evt) => {
   const target = evt.target;
 
   if (target.matches(".deleteBtn")) {
+    evt.target.disabled = true;
     const deletingId = +target.dataset.id;
-    fetch(`${API_URL_Students}/${deletingId}`, {
+    fetch(`${API_URL_Products}/${deletingId}`, {
       method: "DELETE",
     })
       .then((res) => {
@@ -104,6 +107,9 @@ elResultList.addEventListener("click", (evt) => {
         );
         products.splice(deletingIndex, 1);
         renderProducts();
+      })
+      .catch(() => {
+        evt.target.disabled = false;
       });
   }
   if (target.matches(".editBtn")) {
@@ -143,8 +149,11 @@ elForm.addEventListener("submit", (evt) => {
   };
 
   if (TitleValue.length && +PriceValue && ModelValue != 0 && benefitsValue) {
+    elFormBtn.disabled = false;
     if (!editingId) {
-      fetch(API_URL_Students, {
+      elFormBtn.disabled = true;
+      elFormBtn.textContent = `Adding ${TitleValue}`;
+      fetch(API_URL_Products, {
         method: "POST",
         body: JSON.stringify(newPhone),
         headers: {
@@ -155,6 +164,7 @@ elForm.addEventListener("submit", (evt) => {
           if (res.status === 201) {
             return res.json();
           }
+          return Promise.reject(res);
         })
         .then((data) => {
           products.push(data);
@@ -165,10 +175,15 @@ elForm.addEventListener("submit", (evt) => {
           const elModalBody = document.querySelector(".modalBody");
 
           showError(elModalBody, "Can't add the product");
+        })
+        .finally(() => {
+          elFormBtn.disabled = false;
+          elFormBtn.textContent = "Add products";
         });
     } else {
+      elFormBtn.disabled = true;
       const editingIdNum = +editingId;
-      fetch(`${API_URL_Students}/${editingId}`, {
+      fetch(`${API_URL_Products}/${editingId}`, {
         method: "PUT",
         body: JSON.stringify(newPhone),
         headers: {
@@ -188,6 +203,10 @@ elForm.addEventListener("submit", (evt) => {
 
           products.splice(editingIndex, 1, newPhone);
           renderProducts();
+        })
+        .finally(() => {
+          elFormBtn.disabled = false;
+          elModal.hide();
         });
     }
   }
@@ -203,42 +222,75 @@ elFilterForm.addEventListener("submit", (evt) => {
     to: { value: toValue },
     manufacturer: { value: manufacturerValue },
     sortby: { value: sortbyValue },
+    filterBtn: elFilterBtn,
   } = elFilterForm.elements;
 
-  const filteredProducts = products.filter((phone) => {
-    return (
-      phone.title.toLowerCase().includes(searchValue.trim().toLowerCase()) &&
-      // phone.benefits
-      //   .toLowerCase()
-      //   .includes(featuresValue.trim().toLowerCase()) &&
-      phone.price >= +fromValue &&
-      (+toValue ? phone.price <= +toValue : true) &&
-      (manufacturerValue == 0 ? true : phone.model.includes(manufacturerValue))
-    );
-  });
+  elFilterBtn.disabled = true;
 
-  filteredProducts.sort((a, b) => {
-    switch (+sortbyValue) {
-      case 1:
-        if (a.title > b.title) {
-          return 1;
-        } else if (b.title > a.title) {
-          return -1;
-        }
-        return 0;
+  const isOrderIncluded = sortbyValue.includes("&_order=");
+  const splittedSortValue = sortbyValue.split("&_order=");
 
-      case 2:
-        return a.price - b.price;
+  fetch(
+    `${API_URL_Products}?${new URLSearchParams({
+      title_like: searchValue,
+      price_gte: fromValue || 0,
+      price_lte: toValue ? toValue : null,
+      _sort: isOrderIncluded ? splittedSortValue[0] : sortbyValue,
+      _order: isOrderIncluded ? splittedSortValue[1] : "asc",
+    })}`
+  )
+    .then((res) => {
+      if (res.status === 200) {
+        return res.json();
+      }
+      return Promise.reject(res);
+    })
+    .then((filredProducts) => {
+      students = filredProducts;
+      renderProducts(filredProducts);
+      console.log(filredProducts);
+    })
+    .catch(() => {
+      showError(elWrapper, "Can't filter products!");
+    })
+    .finally(() => {
+      elFilterBtn.disabled = false;
+    });
 
-      case 3:
-        return b.price - a.price;
+  // const filteredProducts = products.filter((phone) => {
+  //   return (
+  //     phone.title.toLowerCase().includes(searchValue.trim().toLowerCase()) &&
+  //     // phone.benefits
+  //     //   .toLowerCase()
+  //     //   .includes(featuresValue.trim().toLowerCase()) &&
+  //     phone.price >= +fromValue &&
+  //     (+toValue ? phone.price <= +toValue : true) &&
+  //     (manufacturerValue == 0 ? true : phone.model.includes(manufacturerValue))
+  //   );
+  // });
 
-      default:
-        return 0;
-    }
-  });
+  // filteredProducts.sort((a, b) => {
+  //   switch (+sortbyValue) {
+  //     case 1:
+  //       if (a.title > b.title) {
+  //         return 1;
+  //       } else if (b.title > a.title) {
+  //         return -1;
+  //       }
+  //       return 0;
 
-  renderProducts(filteredProducts);
+  //     case 2:
+  //       return a.price - b.price;
+
+  //     case 3:
+  //       return b.price - a.price;
+
+  //     default:
+  //       return 0;
+  //   }
+  // });
+
+  // renderProducts(filteredProducts);
 });
 
 //
@@ -272,6 +324,8 @@ elLoader.textContent = "Loading...";
 //
 //
 function renderProducts(arr = products) {
+  counter();
+
   elResultList.innerHTML = null;
 
   arr.forEach((phone) => {
