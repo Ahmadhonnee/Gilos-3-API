@@ -70,9 +70,9 @@ fetch(API_URL_Products)
   .catch((err) => {
     console.log(err);
     if (err.status === 404) {
-      showError(elWrapper, "Nothing Found !");
+      return showError(elWrapper, "Nothing Found !");
     }
-    showError(elWrapper);
+    return showError(elWrapper);
   })
   .finally(() => {
     spinner.remove();
@@ -80,8 +80,9 @@ fetch(API_URL_Products)
   });
 
 const showError = (appendTo, errMsg) => {
-  const elAlert = document.createElement("p");
-  elAlert.className = "alert alert-danger";
+  const elAlert = document.createElement("div");
+  elAlert.className = "badge bg-secondary";
+  // elAlert.style = "";
   elAlert.textContent = errMsg || "Error";
   appendTo.append(elAlert);
 };
@@ -233,8 +234,8 @@ elFilterForm.addEventListener("submit", (evt) => {
   fetch(
     `${API_URL_Products}?${new URLSearchParams({
       title_like: searchValue,
-      price_gte: fromValue || 0,
-      price_lte: toValue ? toValue : null,
+      price_gte: fromValue ? +fromValue : 0,
+      price_lte: toValue ? +toValue : null,
       _sort: isOrderIncluded ? splittedSortValue[0] : sortbyValue,
       _order: isOrderIncluded ? splittedSortValue[1] : "asc",
     })}`
@@ -403,6 +404,11 @@ function addManufacturersTo() {
   });
 }
 
+console.log(products);
 function counter(arr = products) {
-  elCounter.textContent = `Count: ${arr.length}`;
+  if (products.length) {
+    return (elCounter.textContent = "");
+  } else {
+    elCounter.textContent = `Count: ${arr.length}`;
+  }
 }
